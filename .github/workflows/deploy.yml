@@ -34,12 +34,15 @@ jobs:
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ vars.AWS_REGION || 'eu-west-1' }}
+          aws-region: ${{ vars.AWS_REGION || 'eu-central-1' }}
       - uses: hashicorp/setup-terraform@v3
       - name: Apply
         id: tf
         working-directory: ${{ inputs.tf_dir }}
         env:
+          # Same region the credentials use, so the AWS_REGION variable and Terraform never disagree.
+          # (The state bucket's region is fixed in providers.tf.)
+          TF_VAR_aws_region: ${{ vars.AWS_REGION || 'eu-central-1' }}
           # Optional custom domain: both must be set for CloudFront to serve it.
           TF_VAR_custom_domain: ${{ vars.APP_CUSTOM_DOMAIN }}
           TF_VAR_acm_certificate_arn: ${{ vars.APP_ACM_CERTIFICATE_ARN }}
@@ -62,7 +65,7 @@ jobs:
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ vars.AWS_REGION || 'eu-west-1' }}
+          aws-region: ${{ vars.AWS_REGION || 'eu-central-1' }}
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
@@ -104,7 +107,7 @@ jobs:
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ vars.AWS_REGION || 'eu-west-1' }}
+          aws-region: ${{ vars.AWS_REGION || 'eu-central-1' }}
       - uses: actions/setup-node@v4
         with:
           node-version: "24"

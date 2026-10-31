@@ -16,7 +16,7 @@ set -euo pipefail
 
 # --- Config (override via env vars if you fork) ------------------------------
 PROJECT="knock-knock"
-REGION="${AWS_REGION:-eu-west-1}"
+REGION="${AWS_REGION:-eu-central-1}"
 GITHUB_REPO="${GITHUB_REPO:-tom-val/kaledojimas}" # owner/repo allowed to assume the role
 ROLE_NAME="${ROLE_NAME:-${PROJECT}-github-actions}"
 APP_TABLE="KnockKnock"

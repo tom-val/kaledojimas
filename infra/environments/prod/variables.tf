@@ -1,7 +1,7 @@
 variable "aws_region" {
   description = "Region for every resource"
   type        = string
-  default     = "eu-west-1"
+  default     = "eu-central-1"
 }
 
 variable "project_name" {

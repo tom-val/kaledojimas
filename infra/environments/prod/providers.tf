@@ -18,7 +18,7 @@ terraform {
   backend "s3" {
     bucket       = "knock-knock-terraform-state"
     key          = "knock-knock/terraform.tfstate"
-    region       = "eu-west-1"
+    region       = "eu-central-1"
     use_lockfile = true
     encrypt      = true
   }

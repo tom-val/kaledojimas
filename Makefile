@@ -22,7 +22,7 @@ seed: ## Create the KnockKnock table in DynamoDB Local (idempotent)
 	cd backend && DYNAMODB_ENDPOINT=http://localhost:$(DYNAMODB_PORT) npm run create-table
 
 api: ## Run the API on http://localhost:3001 against DynamoDB Local (reachable from phones on the LAN)
-	cd backend && TABLE_NAME=KnockKnock DYNAMODB_ENDPOINT=http://localhost:$(DYNAMODB_PORT) AWS_REGION=eu-west-1 \
+	cd backend && TABLE_NAME=KnockKnock DYNAMODB_ENDPOINT=http://localhost:$(DYNAMODB_PORT) AWS_REGION=eu-central-1 \
 		AWS_ACCESS_KEY_ID=local AWS_SECRET_ACCESS_KEY=local npm run dev
 
 api-memory: ## Run the API with an in-memory store (no Docker needed)

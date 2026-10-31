@@ -17,7 +17,7 @@ variable "web_bucket_domain" {
 }
 
 variable "api_origin_domain" {
-  description = "API Gateway hostname (no scheme), e.g. abc123.execute-api.eu-west-1.amazonaws.com"
+  description = "API Gateway hostname (no scheme), e.g. abc123.execute-api.eu-central-1.amazonaws.com"
   type        = string
 }
 

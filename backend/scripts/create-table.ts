@@ -9,7 +9,7 @@ const tableName = process.env.TABLE_NAME ?? 'KnockKnock';
 
 const client = new DynamoDBClient({
   endpoint,
-  region: process.env.AWS_REGION ?? 'eu-west-1',
+  region: process.env.AWS_REGION ?? 'eu-central-1',
   // DynamoDB Local accepts any credentials.
   credentials: { accessKeyId: 'local', secretAccessKey: 'local' },
 });
