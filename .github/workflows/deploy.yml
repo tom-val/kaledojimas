@@ -1,0 +1,168 @@
+name: Deploy (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: GitHub environment holding the secrets (e.g. Prod)
+        required: true
+        type: string
+      tf_dir:
+        description: Path to the Terraform environment
+        required: true
+        type: string
+
+permissions:
+  id-token: write # OIDC -> AWS
+  contents: read
+
+jobs:
+  # 1. Infrastructure --------------------------------------------------------
+  infra:
+    name: Terraform apply
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    outputs:
+      api_function_name: ${{ steps.tf.outputs.api_function_name }}
+      api_endpoint: ${{ steps.tf.outputs.api_endpoint }}
+      web_bucket: ${{ steps.tf.outputs.web_bucket }}
+      cloudfront_distribution_id: ${{ steps.tf.outputs.cloudfront_distribution_id }}
+      cloudfront_domain: ${{ steps.tf.outputs.cloudfront_domain }}
+      web_url: ${{ steps.tf.outputs.web_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || 'eu-west-1' }}
+      - uses: hashicorp/setup-terraform@v3
+      - name: Apply
+        id: tf
+        working-directory: ${{ inputs.tf_dir }}
+        env:
+          # Optional custom domain: both must be set for CloudFront to serve it.
+          TF_VAR_custom_domain: ${{ vars.APP_CUSTOM_DOMAIN }}
+          TF_VAR_acm_certificate_arn: ${{ vars.APP_ACM_CERTIFICATE_ARN }}
+        run: |
+          terraform init -input=false
+          terraform apply -auto-approve -input=false
+          for o in api_function_name api_endpoint web_bucket \
+                   cloudfront_distribution_id cloudfront_domain web_url; do
+            echo "$o=$(terraform output -raw $o)" >> "$GITHUB_OUTPUT"
+          done
+
+  # 2. API Lambda (Node, esbuild bundle) -------------------------------------
+  api:
+    name: API (Node)
+    needs: infra
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || 'eu-west-1' }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Test and bundle
+        working-directory: backend
+        run: |
+          npm ci
+          npm test
+          npm run build
+          # @aws-sdk/* is left external — the nodejs24.x runtime provides it.
+          (cd dist && zip -q ../api.zip index.mjs index.mjs.map)
+
+      - name: Ship to Lambda
+        run: |
+          aws lambda update-function-code \
+            --function-name ${{ needs.infra.outputs.api_function_name }} \
+            --zip-file fileb://backend/api.zip >/dev/null
+          aws lambda wait function-updated \
+            --function-name ${{ needs.infra.outputs.api_function_name }}
+
+      - name: Smoke test
+        run: |
+          # Hit API Gateway directly — CloudFront may not have picked up a brand-new origin yet.
+          API="${{ needs.infra.outputs.api_endpoint }}"
+          curl -fsS --retry 5 --retry-all-errors --retry-delay 5 "${API%/}/health"
+          echo
+
+  # 3. Web client -> S3 + CloudFront -----------------------------------------
+  web:
+    name: Web
+    needs: [infra, api]
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || 'eu-west-1' }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Build web
+        working-directory: app
+        env:
+          # Same origin as the site itself: CloudFront routes /v1/* and /health to API Gateway,
+          # so the browser never makes a cross-origin request.
+          EXPO_PUBLIC_API_URL: ${{ needs.infra.outputs.web_url }}
+        run: |
+          npm ci
+          npm run export:web
+
+      - name: Sync and invalidate
+        run: |
+          # Long-cache the fingerprinted bundles, never cache the HTML.
+          aws s3 sync app/dist "s3://${{ needs.infra.outputs.web_bucket }}" \
+            --delete --cache-control "public,max-age=31536000,immutable" --exclude "*.html"
+          aws s3 sync app/dist "s3://${{ needs.infra.outputs.web_bucket }}" \
+            --cache-control "no-cache" --exclude "*" --include "*.html"
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ needs.infra.outputs.cloudfront_distribution_id }} \
+            --paths "/*" >/dev/null
+
+      - name: Summary
+        run: echo "### Deployed → ${{ needs.infra.outputs.web_url }}" >> "$GITHUB_STEP_SUMMARY"
+
+  # 4. EAS environment -------------------------------------------------------
+  # Native builds (eas-build.yml) and OTA updates (eas-update.yml) bundle their EXPO_PUBLIC_* values
+  # from the EAS "production" environment, not from this repo, so keep it in step with what Terraform
+  # just deployed. Opt-in via the EAS_ENABLED variable, so a plain web deploy never needs an Expo account.
+  eas-env:
+    name: Sync EAS environment
+    needs: infra
+    if: ${{ vars.EAS_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Push EXPO_PUBLIC_* into EAS "production"
+        working-directory: app
+        # eas env:create evaluates the app config (which loads plugins), so deps must be installed.
+        # --force overwrites an existing value, which is the whole point after a redeploy.
+        run: |
+          npm ci
+          eas env:create --scope project --environment production \
+            --name EXPO_PUBLIC_API_URL \
+            --value "${{ needs.infra.outputs.web_url }}" \
+            --visibility plaintext --type string --force --non-interactive

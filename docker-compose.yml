@@ -1,0 +1,9 @@
+services:
+  dynamodb-local:
+    image: amazon/dynamodb-local:latest
+    container_name: knock-knock-dynamodb
+    ports:
+      - "${DYNAMODB_PORT:-8000}:8000"
+    # -sharedDb keeps every client on one database regardless of credentials; -inMemory means a
+    # restart is a clean slate (re-run `make seed`).
+    command: "-jar DynamoDBLocal.jar -sharedDb -inMemory"

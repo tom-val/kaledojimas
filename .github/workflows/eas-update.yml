@@ -1,0 +1,62 @@
+name: EAS Update (manual OTA)
+
+# Ships a JS-only over-the-air update to installed builds on the chosen channel — no native rebuild.
+# Requires expo-updates in the app (`npx expo install expo-updates` + `eas update:configure`) before
+# the first store build; builds without it never receive updates.
+#
+# The bundle always uses the PRODUCTION EXPO_PUBLIC_* values from the EAS "production" environment
+# (pushed there by deploy.yml), whichever channel it is published to.
+
+on:
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: Channel to publish to
+        required: true
+        default: preview
+        type: choice
+        options: [preview, production]
+      platform:
+        description: Platform(s) to publish to
+        required: true
+        default: all
+        type: choice
+        options: [all, android, ios]
+      message:
+        description: Update message (shown in the EAS dashboard)
+        required: true
+        default: Manual OTA update
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eas-update-${{ inputs.channel }}
+  cancel-in-progress: false
+
+jobs:
+  update:
+    name: EAS Update (${{ inputs.channel }} / ${{ inputs.platform }})
+    runs-on: ubuntu-latest
+    environment: Prod
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - working-directory: app
+        run: |
+          npm ci
+          eas update \
+            --branch "${{ inputs.channel }}" \
+            --platform "${{ inputs.platform }}" \
+            --environment production \
+            --message "${{ inputs.message }}" \
+            --non-interactive

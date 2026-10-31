@@ -1,0 +1,26 @@
+{
+  "name": "knock-knock-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "node --watch src/dev-server.ts",
+    "test": "node --test src/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "build": "esbuild src/handler.ts --bundle --platform=node --target=node24 --format=esm --minify --sourcemap --external:@aws-sdk/* --outfile=dist/index.mjs",
+    "create-table": "node scripts/create-table.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1161.0",
+    "@aws-sdk/lib-dynamodb": "^3.1161.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.152",
+    "@types/node": "^24.0.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.9.0"
+  }
+}

@@ -1,0 +1,63 @@
+html,
+body {
+  background-color: #0f0a1a;
+}
+
+/* Leaflet (web map). OSM tiles are bright, so invert them into a night map. */
+.kk-map.leaflet-container {
+  background-color: #0f0a1a;
+}
+
+/* Sits below the round "my location" button in the top bar. */
+.kk-map .leaflet-top.leaflet-right {
+  top: 64px;
+}
+
+.kk-map .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(200deg) brightness(0.9) contrast(0.9) saturate(0.6);
+}
+
+.leaflet-marker-icon.kk-pin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #1c1330;
+  border: 2px solid #ff7a1a;
+  font-size: 20px;
+  line-height: 1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.leaflet-marker-icon.kk-pin-mine {
+  background: #ff7a1a;
+  border-color: #f6f1ff;
+}
+
+.leaflet-marker-icon.kk-pin-placing {
+  font-size: 26px;
+  border: 3px solid #f6f1ff;
+  cursor: grab;
+}
+
+.kk-me {
+  border-radius: 50%;
+  background: #4c9bff;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 6px rgba(76, 155, 255, 0.25);
+}
+
+.kk-map .leaflet-popup-content-wrapper,
+.kk-map .leaflet-popup-tip {
+  background: #1c1330;
+  color: #f6f1ff;
+}
+
+.kk-map .leaflet-control-attribution {
+  background: rgba(15, 10, 26, 0.7);
+  color: #b6a9cf;
+}
+
+.kk-map .leaflet-control-attribution a {
+  color: #ff9a4d;
+}

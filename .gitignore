@@ -1,0 +1,29 @@
+# --- OS / editors ---
+.DS_Store
+*.log
+
+# --- Node / Expo (app/, backend/) ---
+node_modules/
+.expo/
+app/dist/
+app/web-build/
+app/expo-env.d.ts
+# Prebuild output: native projects are generated, never committed (CNG).
+app/ios/
+app/android/
+backend/dist/
+backend/api.zip
+
+# --- Secrets / local config ---
+.env
+.env.*
+!.env.example
+
+# --- Terraform (infra/) ---
+.terraform/
+# .terraform.lock.hcl is deliberately NOT ignored: the provider lock is part of the config.
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.example.tfvars
+.placeholder-*.zip
