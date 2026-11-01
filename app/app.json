@@ -22,7 +22,11 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.tomval.knockknock"
+      "package": "com.tomval.knockknock",
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "output": "single",
@@ -62,6 +66,12 @@
         "projectId": "972493ed-a7c5-4360-9707-566863bc3533"
       }
     },
-    "owner": "smikis"
+    "owner": "smikis",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/972493ed-a7c5-4360-9707-566863bc3533"
+    }
   }
 }
