@@ -24,7 +24,7 @@ APP_TABLE="KnockKnock"
 
 ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
 # Also hardcoded in infra/environments/prod/providers.tf (backend blocks can't interpolate).
-STATE_BUCKET="${STATE_BUCKET:-${PROJECT}-terraform-state}"
+STATE_BUCKET="${STATE_BUCKET:-tomval-${PROJECT}-terraform-state}"
 OIDC_HOST="token.actions.githubusercontent.com"
 OIDC_ARN="arn:aws:iam::${ACCOUNT_ID}:oidc-provider/${OIDC_HOST}"
 
@@ -34,8 +34,14 @@ echo "Repo:     ${GITHUB_REPO}"
 echo
 
 # --- 1. State bucket --------------------------------------------------------
-if aws s3api head-bucket --bucket "${STATE_BUCKET}" 2>/dev/null; then
+# head-bucket: success = ours, 404 = free, 403 = the name belongs to another AWS account.
+if HEAD_ERR="$(aws s3api head-bucket --bucket "${STATE_BUCKET}" 2>&1)"; then
   echo "State bucket ${STATE_BUCKET} already exists"
+elif [[ "${HEAD_ERR}" == *"403"* || "${HEAD_ERR}" == *"Forbidden"* ]]; then
+  echo "ERROR: bucket name ${STATE_BUCKET} is taken by another AWS account (S3 names are global)." >&2
+  echo "       Pick another name, set it in infra/environments/prod/providers.tf and re-run with" >&2
+  echo "       STATE_BUCKET=<name> bash infra/bootstrap.sh" >&2
+  exit 1
 else
   echo "Creating state bucket ${STATE_BUCKET}"
   aws s3api create-bucket \

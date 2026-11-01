@@ -13,10 +13,11 @@ terraform {
   }
 
   # Created by infra/bootstrap.sh. Backend blocks cannot interpolate, so a fork must edit these
-  # literals AND pass the same bucket name to bootstrap.sh via STATE_BUCKET.
+  # literals AND pass the same bucket name to bootstrap.sh via STATE_BUCKET. S3 names are global:
+  # plain "knock-knock-terraform-state" already belongs to another AWS account.
   # Locking uses S3 conditional writes (use_lockfile) — no DynamoDB lock table.
   backend "s3" {
-    bucket       = "knock-knock-terraform-state"
+    bucket       = "tomval-knock-knock-terraform-state"
     key          = "knock-knock/terraform.tfstate"
     region       = "eu-central-1"
     use_lockfile = true
