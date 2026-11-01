@@ -18,6 +18,9 @@ set -euo pipefail
 PROJECT="knock-knock"
 REGION="${AWS_REGION:-eu-central-1}"
 GITHUB_REPO="${GITHUB_REPO:-tom-val/kaledojimas}" # owner/repo allowed to assume the role
+# This repo's OIDC tokens use GitHub's immutable subject (owner@id/repo@id), not plain owner/repo.
+# Read it with: gh api repos/<owner>/<repo>/actions/oidc/customization/sub --jq .sub_claim_prefix
+GITHUB_SUB_PREFIX="${GITHUB_SUB_PREFIX:-repo:tom-val@9081294/kaledojimas@1441076807}"
 ROLE_NAME="${ROLE_NAME:-${PROJECT}-github-actions}"
 APP_TABLE="KnockKnock"
 # ---------------------------------------------------------------------------
@@ -87,7 +90,7 @@ TRUST_POLICY=$(
     "Action": "sts:AssumeRoleWithWebIdentity",
     "Condition": {
       "StringEquals": { "${OIDC_HOST}:aud": "sts.amazonaws.com" },
-      "StringLike": { "${OIDC_HOST}:sub": "repo:${GITHUB_REPO}:*" }
+      "StringLike": { "${OIDC_HOST}:sub": ["repo:${GITHUB_REPO}:*", "${GITHUB_SUB_PREFIX}:*"] }
     }
   }]
 }
@@ -182,6 +185,7 @@ echo "Create a GitHub environment named Prod and add this as its secret AWS_ROLE
 echo
 echo "  ${ROLE_ARN}"
 echo
-echo "Optional: repository variable AWS_REGION, and EXPO_TOKEN + EAS_ENABLED=true once EAS is set up."
+echo "Optional: repository variables AWS_REGION and EAS_ENABLED=true (repository level, a job's if: can't"
+echo "see environment variables), plus the Prod secret EXPO_TOKEN once EAS is set up."
 echo "Then push to main to run deploy-prod."
 echo "============================================================"

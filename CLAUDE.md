@@ -69,5 +69,5 @@ House ids start with their cell, so DELETE finds the item without an index. List
 - CloudFront serves the web export and routes `/v1/*` + `/health` to API Gateway on the same origin.
 - No auth at all, so the API Gateway stage throttle (50 rps / burst 100) is the abuse brake.
 - One-time setup: `bash infra/bootstrap.sh` (state bucket, GitHub OIDC, deploy role), then GitHub
-  environment `Prod` with secret `AWS_ROLE_ARN`. Optional: `EXPO_TOKEN` + variable `EAS_ENABLED=true`,
+  environment `Prod` with secret `AWS_ROLE_ARN`. Optional: `EXPO_TOKEN` + repository variable `EAS_ENABLED=true`,
   variables `APP_CUSTOM_DOMAIN` + `APP_ACM_CERTIFICATE_ARN`.
