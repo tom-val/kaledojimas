@@ -58,6 +58,7 @@ House ids start with their cell, so DELETE finds the item without an index. List
 - Strings through `t` from `@/i18n` (`en` is the source, keep `lt` in step — Lithuanian plurals via `namai()`).
 - The house token lives in AsyncStorage (`knock-knock/my-house`); it is the only proof of ownership.
 - Buttons and the note field are `@expo/ui` universal components inside a `Host`.
+- App icons, splash and favicon are drawn by `app/scripts/generate-icons.mjs`; edit that, not the PNGs. Native builds pick them up, OTA updates don't.
 - Before pushing app changes: `cd app && npm run typecheck && npm run lint && npm run export:web`.
 
 ## Infra / deploy
