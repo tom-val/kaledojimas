@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { HouseMap } from '@/components/house-map';
 import type { Placement } from '@/components/house-map/types';
 import { Colors, DefaultCenter, Spacing } from '@/constants/theme';
+import { useKeyboardHeight } from '@/hooks/use-keyboard-height';
 import { useMyHouse } from '@/hooks/use-my-house';
 import { useNearbyHouses } from '@/hooks/use-nearby-houses';
 import { type Strings, useI18n } from '@/i18n';
@@ -48,6 +49,7 @@ function errorMessage(t: Strings, err: unknown) {
 export function Home() {
   const { t, language, locale, setLanguage } = useI18n();
   const insets = useSafeAreaInsets();
+  const keyboardHeight = useKeyboardHeight();
   const { myHouse, mark, end } = useMyHouse();
   const [userLocation, setUserLocation] = useState<LatLng | null>(null);
   const [focus, setFocus] = useState<LatLng>(DefaultCenter);
@@ -175,7 +177,9 @@ export function Home() {
         </View>
       </View>
 
-      <View style={[styles.bottom, { paddingBottom: insets.bottom + Spacing.three }]} pointerEvents="box-none">
+      <View
+        style={[styles.bottom, { paddingBottom: (keyboardHeight || insets.bottom) + Spacing.three }]}
+        pointerEvents="box-none">
         <ActionPanel
           mode={mode}
           busy={busy}
