@@ -51,6 +51,17 @@
       "typedRoutes": true,
       "reactCompiler": true
     },
-    "backgroundColor": "#0F0A1A"
+    "backgroundColor": "#0F0A1A",
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "972493ed-a7c5-4360-9707-566863bc3533"
+      }
+    },
+    "owner": "smikis"
   }
 }
