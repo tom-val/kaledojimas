@@ -55,7 +55,7 @@ House ids start with their cell, so DELETE finds the item without an index. List
 ## App rules
 
 - The app is always dark (`userInterfaceStyle: dark`); colours only through `@/constants/theme`.
-- Strings through `t` from `@/i18n` (`en` is the source, keep `lt` in step — Lithuanian plurals via `namai()`).
+- Strings through `useI18n()` from `@/i18n` (`en` is the source, keep `lt` in step — Lithuanian plurals via `namai()`). Lithuanian is the default whatever the device language; the switch is saved in AsyncStorage (`knock-knock/language`). System dialogs and the home-screen name follow the device language (`app/locales/*.json`).
 - The house token lives in AsyncStorage (`knock-knock/my-house`); it is the only proof of ownership.
 - Buttons and the note field are `@expo/ui` universal components inside a `Host`.
 - App icons, splash and favicon are drawn by `app/scripts/generate-icons.mjs`; edit that, not the PNGs. Native builds pick them up, OTA updates don't.

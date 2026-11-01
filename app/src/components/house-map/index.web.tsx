@@ -3,7 +3,7 @@ import 'leaflet/dist/leaflet.css';
 import type * as Leaflet from 'leaflet';
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
 
-import { t } from '@/i18n';
+import { useI18n } from '@/i18n';
 
 import type { HouseMapProps } from './types';
 
@@ -24,6 +24,7 @@ function popupContent(title: string, note?: string) {
 }
 
 export function HouseMap({ focus, houses, myHouseId, userLocation, placement, onCenterChange }: HouseMapProps) {
+  const { t } = useI18n();
   const containerRef = useRef<HTMLDivElement>(null);
   const [L, setL] = useState<typeof Leaflet | null>(null);
   const mapRef = useRef<Leaflet.Map | null>(null);
@@ -93,7 +94,7 @@ export function HouseMap({ focus, houses, myHouseId, userLocation, placement, on
         .bindPopup(popupContent(mine ? t.yourHouse : t.candyHere, h.note))
         .addTo(layer);
     }
-  }, [L, houses, myHouseId, placement]);
+  }, [L, houses, myHouseId, placement, t]);
 
   useEffect(() => {
     const layer = overlayLayer.current;

@@ -7,7 +7,7 @@ yourself off the map when the candy runs out. No sign-up — it's GPS based.
 - **Map**: all active houses within ~2 km, refreshed every 30 s, with an optional note ("Full-size bars!").
 - **Out of candy**: removes your house. Houses also disappear by themselves after 6 hours.
 
-English and Lithuanian, picked from the device language.
+Lithuanian by default, with a button on the map to switch to English.
 
 ## Stack
 

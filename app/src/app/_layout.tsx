@@ -2,7 +2,7 @@ import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
 import { Colors } from '@/constants/theme';
-import { t } from '@/i18n';
+import { useI18n } from '@/i18n';
 
 const theme = {
   ...DarkTheme,
@@ -10,6 +10,8 @@ const theme = {
 };
 
 export default function RootLayout() {
+  const { t } = useI18n();
+
   return (
     <ThemeProvider value={theme}>
       <StatusBar style="light" />

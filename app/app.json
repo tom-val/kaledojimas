@@ -34,7 +34,6 @@
     },
     "plugins": [
       "expo-router",
-      "expo-localization",
       [
         "expo-splash-screen",
         {
@@ -46,10 +45,14 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Knock Knock uses your location to show nearby houses giving out candy and to mark your own house."
+          "locationWhenInUsePermission": "Tuk tuk naudoja jūsų vietą, kad parodytų šalia esančius namus, kuriuose vaišina saldainiais, ir kad galėtumėte pažymėti savo namus."
         }
       ]
     ],
+    "locales": {
+      "en": "./locales/en.json",
+      "lt": "./locales/lt.json"
+    },
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

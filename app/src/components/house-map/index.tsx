@@ -3,13 +3,14 @@ import { StyleSheet, Text, View } from 'react-native';
 import MapView, { Circle, Marker } from 'react-native-maps';
 
 import { Colors } from '@/constants/theme';
-import { t } from '@/i18n';
+import { useI18n } from '@/i18n';
 
 import type { HouseMapProps } from './types';
 
 const ZOOMED_IN = { latitudeDelta: 0.012, longitudeDelta: 0.012 };
 
 export function HouseMap({ focus, houses, myHouseId, placement, onCenterChange }: HouseMapProps) {
+  const { t } = useI18n();
   const mapRef = useRef<MapView>(null);
   const isFirstFocus = useRef(true);
 

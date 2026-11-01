@@ -8,7 +8,7 @@ import type { Placement } from '@/components/house-map/types';
 import { Colors, DefaultCenter, Spacing } from '@/constants/theme';
 import { useMyHouse } from '@/hooks/use-my-house';
 import { useNearbyHouses } from '@/hooks/use-nearby-houses';
-import { locale, t } from '@/i18n';
+import { type Strings, useI18n } from '@/i18n';
 import { ApiError } from '@/utils/api';
 import { clampToRadius, type LatLng, MAX_PIN_DISTANCE_M } from '@/utils/geo';
 
@@ -27,7 +27,7 @@ async function getLocation(ask: boolean): Promise<LatLng | 'denied' | 'failed'> 
   }
 }
 
-function confirmEnd(): Promise<boolean> {
+function confirmEnd(t: Strings): Promise<boolean> {
   if (Platform.OS === 'web') {
     return Promise.resolve(window.confirm(`${t.endConfirmTitle}\n${t.endConfirmBody}`));
   }
@@ -39,12 +39,14 @@ function confirmEnd(): Promise<boolean> {
   );
 }
 
-function errorMessage(err: unknown) {
-  if (err instanceof ApiError) return err.status >= 500 ? t.genericError : err.message;
+// The API's own messages are English, so show ours instead.
+function errorMessage(t: Strings, err: unknown) {
+  if (err instanceof ApiError) return err.status === 422 ? t.tooFar : t.genericError;
   return t.offline;
 }
 
 export function Home() {
+  const { t, language, locale, setLanguage } = useI18n();
   const insets = useSafeAreaInsets();
   const { myHouse, mark, end } = useMyHouse();
   const [userLocation, setUserLocation] = useState<LatLng | null>(null);
@@ -63,7 +65,7 @@ export function Home() {
     }
     setUserLocation(result);
     return result;
-  }, []);
+  }, [t]);
 
   // Centre on the user at launch; ask for permission straight away since the map is the whole app.
   useEffect(() => {
@@ -94,21 +96,21 @@ export function Home() {
       setPlacing(null);
       nearby.refresh();
     } catch (err) {
-      setMessage(errorMessage(err));
+      setMessage(errorMessage(t, err));
     } finally {
       setBusy(false);
     }
   };
 
   const endParticipation = async () => {
-    if (!(await confirmEnd())) return;
+    if (!(await confirmEnd(t))) return;
     setBusy(true);
     setMessage(null);
     try {
       await end();
       nearby.refresh();
     } catch (err) {
-      setMessage(errorMessage(err));
+      setMessage(errorMessage(t, err));
     } finally {
       setBusy(false);
     }
@@ -152,13 +154,25 @@ export function Home() {
           <Text style={styles.chipTitle}>🎃 {t.appName}</Text>
           <Text style={styles.chipBody}>{nearby.failed ? t.offline : t.nearby(nearby.houses.length)}</Text>
         </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t.recenter}
-          onPress={() => locate(true).then((p) => p && setFocus(p))}
-          style={({ pressed }) => [styles.roundButton, pressed && { opacity: 0.7 }]}>
-          <Text style={styles.roundButtonIcon}>📍</Text>
-        </Pressable>
+        <View style={styles.topButtons}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t.switchLanguage}
+            onPress={() => {
+              setMessage(null);
+              setLanguage(language === 'lt' ? 'en' : 'lt');
+            }}
+            style={({ pressed }) => [styles.roundButton, pressed && { opacity: 0.7 }]}>
+            <Text style={styles.languageLabel}>{language === 'lt' ? 'EN' : 'LT'}</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t.recenter}
+            onPress={() => locate(true).then((p) => p && setFocus(p))}
+            style={({ pressed }) => [styles.roundButton, pressed && { opacity: 0.7 }]}>
+            <Text style={styles.roundButtonIcon}>📍</Text>
+          </Pressable>
+        </View>
       </View>
 
       <View style={[styles.bottom, { paddingBottom: insets.bottom + Spacing.three }]} pointerEvents="box-none">
@@ -215,8 +229,12 @@ const styles = StyleSheet.create({
     marginTop: Spacing.half,
     fontVariant: ['tabular-nums'],
   },
-  roundButton: {
+  topButtons: {
     marginLeft: 'auto',
+    flexDirection: 'row',
+    gap: Spacing.two,
+  },
+  roundButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -228,6 +246,11 @@ const styles = StyleSheet.create({
   },
   roundButtonIcon: {
     fontSize: 18,
+  },
+  languageLabel: {
+    color: Colors.text,
+    fontSize: 13,
+    fontWeight: '700',
   },
   bottom: {
     position: 'absolute',

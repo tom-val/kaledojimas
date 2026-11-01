@@ -1,0 +1,9 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "Tuk tuk",
+    "NSLocationWhenInUseUsageDescription": "Tuk tuk naudoja jūsų vietą, kad parodytų šalia esančius namus, kuriuose vaišina saldainiais, ir kad galėtumėte pažymėti savo namus."
+  },
+  "android": {
+    "app_name": "Tuk tuk"
+  }
+}

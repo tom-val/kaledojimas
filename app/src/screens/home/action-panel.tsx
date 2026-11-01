@@ -3,7 +3,7 @@ import { useRef } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import { Colors, MaxPanelWidth, Spacing } from '@/constants/theme';
-import { t } from '@/i18n';
+import { useI18n } from '@/i18n';
 
 export type PanelMode = 'browse' | 'placing' | 'live';
 
@@ -20,6 +20,7 @@ type Props = {
 };
 
 export function ActionPanel({ mode, busy, message, until, onMark, onConfirm, onCancel, onEnd }: Props) {
+  const { t } = useI18n();
   const note = useRef('');
 
   return (

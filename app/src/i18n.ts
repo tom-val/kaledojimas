@@ -1,4 +1,5 @@
-import { getLocales } from 'expo-localization';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSyncExternalStore } from 'react';
 
 const en = {
   appName: 'Knock Knock',
@@ -21,10 +22,12 @@ const en = {
   locationFailed: 'Could not get your location. Try again outside or near a window.',
   genericError: 'Something went wrong. Try again.',
   offline: 'Cannot reach the server.',
+  tooFar: 'Your house must be within 150 m of where you are now.',
   recenter: 'Show my location',
+  switchLanguage: 'Switch to Lithuanian',
 };
 
-type Strings = typeof en;
+export type Strings = typeof en;
 
 /** Lithuanian plural forms: 1 namas, 2–9 namai, 10–20 namų, 21 namas… */
 function namai(n: number) {
@@ -56,10 +59,51 @@ const lt: Strings = {
   locationFailed: 'Nepavyko nustatyti vietos. Bandykite lauke arba prie lango.',
   genericError: 'Kažkas nepavyko. Bandykite dar kartą.',
   offline: 'Nepavyksta pasiekti serverio.',
+  tooFar: 'Namai turi būti ne toliau kaip 150 m nuo jūsų dabartinės vietos.',
   recenter: 'Rodyti mano vietą',
+  switchLanguage: 'Perjungti į anglų kalbą',
 };
 
-const languageCode = getLocales()[0]?.languageCode;
+export type Language = 'lt' | 'en';
 
-export const t: Strings = languageCode === 'lt' ? lt : en;
-export const locale = languageCode === 'lt' ? 'lt-LT' : undefined;
+const STORAGE_KEY = 'knock-knock/language';
+const strings: Record<Language, Strings> = { lt, en };
+const listeners = new Set<() => void>();
+
+// Lithuanian until the user picks otherwise, whatever the device language is.
+let language: Language = 'lt';
+
+function apply(next: Language) {
+  language = next;
+  if (typeof document !== 'undefined') document.documentElement.lang = next;
+  listeners.forEach((listener) => listener());
+}
+
+function setLanguage(next: Language) {
+  apply(next);
+  AsyncStorage.setItem(STORAGE_KEY, next).catch(() => {});
+}
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+apply(language);
+AsyncStorage.getItem(STORAGE_KEY)
+  .then((saved) => {
+    if (saved === 'lt' || saved === 'en') apply(saved);
+  })
+  .catch(() => {});
+
+export function useI18n() {
+  const current = useSyncExternalStore(subscribe, () => language);
+  return {
+    t: strings[current],
+    language: current,
+    locale: current === 'lt' ? 'lt-LT' : undefined,
+    setLanguage,
+  };
+}
