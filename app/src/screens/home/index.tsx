@@ -1,6 +1,6 @@
 import * as Location from 'expo-location';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HouseMap } from '@/components/house-map';
@@ -14,6 +14,9 @@ import { ApiError } from '@/utils/api';
 import { clampToRadius, type LatLng, MAX_PIN_DISTANCE_M } from '@/utils/geo';
 
 import { ActionPanel, type PanelMode } from './action-panel';
+
+/** Stop saying we're still searching if a GPS fix takes this long; the map works without one. */
+const LOCATING_TIMEOUT_MS = 8000;
 
 async function getLocation(ask: boolean): Promise<LatLng | 'denied' | 'failed'> {
   const { status } = ask
@@ -54,6 +57,7 @@ export function Home() {
   const [userLocation, setUserLocation] = useState<LatLng | null>(null);
   const [focus, setFocus] = useState<LatLng>(DefaultCenter);
   const [viewCenter, setViewCenter] = useState<LatLng>(DefaultCenter);
+  const [locating, setLocating] = useState(true);
   const [placing, setPlacing] = useState<{ anchor: LatLng; pin: LatLng } | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -71,12 +75,18 @@ export function Home() {
 
   // Centre on the user at launch; ask for permission straight away since the map is the whole app.
   useEffect(() => {
+    const timeout = setTimeout(() => setLocating(false), LOCATING_TIMEOUT_MS);
     getLocation(true).then((p) => {
+      clearTimeout(timeout);
+      setLocating(false);
       if (typeof p === 'object') {
         setUserLocation(p);
         setFocus(p);
+        // Search here right away rather than once the map has finished flying over.
+        setViewCenter(p);
       }
     });
+    return () => clearTimeout(timeout);
   }, []);
 
   const startPlacing = async () => {
@@ -135,6 +145,9 @@ export function Home() {
     [nearby.houses, myHouse],
   );
 
+  // Only an empty result is misleading while loading; a known count can stay up during a pan.
+  const searching = !nearby.failed && nearby.houses.length === 0 && (locating || nearby.loading);
+
   const mode: PanelMode = placing ? 'placing' : myHouse ? 'live' : 'browse';
   const until = myHouse
     ? new Date(myHouse.expiresAt * 1000).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
@@ -154,7 +167,14 @@ export function Home() {
       <View style={[styles.topBar, { top: insets.top + Spacing.two }]} pointerEvents="box-none">
         <View style={styles.chip}>
           <Text style={styles.chipTitle}>🎃 {t.appName}</Text>
-          <Text style={styles.chipBody}>{nearby.failed ? t.offline : t.nearby(nearby.houses.length)}</Text>
+          {searching ? (
+            <View style={styles.searching}>
+              <ActivityIndicator size="small" color={Colors.pumpkin} />
+              <Text style={styles.chipBody}>{t.searching}</Text>
+            </View>
+          ) : (
+            <Text style={styles.chipBody}>{nearby.failed ? t.offline : t.nearby(nearby.houses.length)}</Text>
+          )}
         </View>
         <View style={styles.topButtons}>
           <Pressable
@@ -226,6 +246,11 @@ const styles = StyleSheet.create({
     color: Colors.text,
     fontSize: 17,
     fontWeight: '800',
+  },
+  searching: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
   },
   chipBody: {
     color: Colors.textSecondary,

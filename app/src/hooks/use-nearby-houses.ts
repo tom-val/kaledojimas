@@ -10,6 +10,7 @@ const DEBOUNCE_MS = 400;
 export function useNearbyHouses(center: LatLng) {
   const [houses, setHouses] = useState<House[]>([]);
   const [failed, setFailed] = useState(false);
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
   // Round to ~100 m so tiny map nudges don't refetch.
   const key = `${center.lat.toFixed(3)},${center.lng.toFixed(3)}`;
@@ -22,6 +23,7 @@ export function useNearbyHouses(center: LatLng) {
         .then((res) => {
           setHouses(res.houses);
           setFailed(false);
+          setLoadedKey(key);
         })
         .catch((err) => {
           if (!controller.signal.aborted) setFailed(true);
@@ -41,5 +43,6 @@ export function useNearbyHouses(center: LatLng) {
 
   const refresh = useCallback(() => setTick((n) => n + 1), []);
 
-  return { houses, failed, refresh };
+  // The 30 s refresh keeps the same key, so only a new area counts as loading.
+  return { houses, failed, loading: loadedKey !== key, refresh };
 }
